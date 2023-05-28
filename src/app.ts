@@ -27,15 +27,26 @@ async function tootsDaily(res: Response) {
   try {
     const toots = await Toot.aggregate([
       {
+        $sort: {
+          "data.created_at": -1,
+        },
+      },
+      {
         $group: {
           _id: {
-            $dateToString: { format: "%Y-%m-%d", date: "$data.created_at" },
+            day: {
+              $dateToString: { format: "%Y-%m-%d", date: "$data.created_at" },
+            },
+            dayName: {
+              $isoDayOfWeek: "$data.created_at",
+            },
           },
           count: { $sum: 1 },
           items: { $push: "$$ROOT" },
         },
       },
     ]);
+
     res.json(toots);
   } catch (err) {
     console.error("Error retrieving toots:", err);
