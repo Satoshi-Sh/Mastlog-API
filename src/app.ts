@@ -1,28 +1,23 @@
 import express, { Request, Response } from "express";
 const app = express();
 import connectDB from "./js/connectDB";
-const mongoose = require("mongoose");
+import Toot from "./js/tootSchema";
 
 connectDB();
-const tootSchema = new mongoose.Schema({
-  // Define the schema fields here
-  // Example: title: String,
-  //         content: String,
-  //         createdAt: Date,
-});
-const Toot = mongoose.model("Toot", tootSchema);
-async function retrieveToots() {
+//get latest account information to make a header
+async function retrieveHeader(res: Response) {
   try {
-    const toots = await Toot.find({});
-    console.log("Retrieved toots:", toots);
+    const toot = await Toot.findOne({}, "data.account").sort({
+      "data.created_at": -1,
+    });
+    res.json(toot);
   } catch (err) {
     console.error("Error retrieving toots:", err);
   }
 }
 
-app.get("/", (req: Request, res: Response) => {
-  retrieveToots();
-  res.send("Hello, Express!");
+app.get("/api/header", (req: Request, res: Response) => {
+  retrieveHeader(res);
 });
 
 app.listen(3000, () => {
