@@ -45,6 +45,11 @@ async function tootsDaily(res: Response) {
           items: { $push: "$$ROOT" },
         },
       },
+      {
+        $sort: {
+          "_id.day": -1, // Sort by day in ascending order
+        },
+      },
     ]);
 
     res.json(toots);
