@@ -58,6 +58,42 @@ async function tootsDaily(res: Response) {
   }
 }
 
+//get recents by day
+async function getRecent(res: Response) {
+  try {
+    const toots = await Toot.aggregate([
+      {
+        $sort: {
+          "data.created_at": -1,
+        },
+      },
+      {
+        $group: {
+          _id: {
+            day: {
+              $dateToString: { format: "%Y-%m-%d", date: "$data.created_at" },
+            },
+            dayName: {
+              $isoDayOfWeek: "$data.created_at",
+            },
+          },
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $sort: {
+          "_id.day": -1, // Sort by day in ascending order
+        },
+      },
+      { $limit: 15 },
+    ]);
+
+    res.json(toots);
+  } catch (err) {
+    console.error("Error retrieving toots:", err);
+  }
+}
+
 // get friends by count
 async function getFriends(res: Response) {
   try {
@@ -90,6 +126,10 @@ app.get("/api/toots", (req: Request, res: Response) => {
 
 app.get("/api/friends", (req: Request, res: Response) => {
   getFriends(res);
+});
+
+app.get("/api/recent", (req: Request, res: Response) => {
+  getRecent(res);
 });
 
 app.listen(3000, () => {
