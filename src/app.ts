@@ -58,12 +58,38 @@ async function tootsDaily(res: Response) {
   }
 }
 
+// get friends by count
+async function getFriends(res: Response) {
+  try {
+    const toots = await Toot.aggregate([
+      { $unwind: "$data.mentions" }, // Flatten the mentions array
+      {
+        $group: {
+          _id: "$data.mentions.username", // Group by the username in mentions
+          count: { $sum: 1 }, // Count the occurrences
+          url: { $first: "$data.mentions.url" },
+        },
+      },
+      { $sort: { count: -1 } },
+      { $limit: 100 },
+    ]);
+
+    res.json(toots);
+  } catch (err) {
+    console.error("Error retrieving toots:", err);
+  }
+}
+
 app.get("/api/header", (req: Request, res: Response) => {
   retrieveHeader(res);
 });
 
 app.get("/api/toots", (req: Request, res: Response) => {
   tootsDaily(res);
+});
+
+app.get("/api/friends", (req: Request, res: Response) => {
+  getFriends(res);
 });
 
 app.listen(3000, () => {
