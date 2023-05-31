@@ -97,6 +97,54 @@ async function tootsDailyHashtag(req: Request, res: Response) {
   }
 }
 
+//get toots by day with hashtag filter;
+async function tootsDailyDate(req: Request, res: Response) {
+  const day = new Date(req.params.value);
+  try {
+    const toots = await Toot.aggregate([
+      {
+        $match: {
+          $expr: {
+            $eq: [
+              {
+                $dateToString: { format: "%Y-%m-%d", date: "$data.created_at" },
+              },
+              { $dateToString: { format: "%Y-%m-%d", date: day } },
+            ],
+          },
+        },
+      },
+      {
+        $sort: {
+          "data.created_at": -1,
+        },
+      },
+
+      {
+        $group: {
+          _id: {
+            day: {
+              $dateToString: { format: "%Y-%m-%d", date: "$data.created_at" },
+            },
+            dayName: { $isoDayOfWeek: "$data.created_at" },
+          },
+          count: { $sum: 1 },
+          items: { $push: "$$ROOT" },
+        },
+      },
+      {
+        $sort: {
+          "_id.day": -1,
+        },
+      },
+    ]);
+
+    res.json(toots);
+  } catch (err) {
+    console.error("Error retrieving toots:", err);
+  }
+}
+
 //get recents by day
 async function getRecent(res: Response) {
   try {
@@ -194,6 +242,10 @@ app.get("/api/hashtags", (req: Request, res: Response) => {
 
 app.get("/api/hashtags/:value", (req: Request, res: Response) => {
   tootsDailyHashtag(req, res);
+});
+
+app.get("/api/date/:value", (req: Request, res: Response) => {
+  tootsDailyDate(req, res);
 });
 
 app.get("/api/recent", (req: Request, res: Response) => {
