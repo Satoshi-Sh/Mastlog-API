@@ -58,6 +58,45 @@ async function tootsDaily(res: Response) {
   }
 }
 
+//get toots by day with hashtag filter;
+async function tootsDailyHashtag(req: Request, res: Response) {
+  const value = req.params.value;
+  try {
+    const toots = await Toot.aggregate([
+      {
+        $match: { "data.tags": { $elemMatch: { name: value } } },
+      },
+      {
+        $sort: {
+          "data.created_at": -1,
+        },
+      },
+
+      {
+        $group: {
+          _id: {
+            day: {
+              $dateToString: { format: "%Y-%m-%d", date: "$data.created_at" },
+            },
+            dayName: { $isoDayOfWeek: "$data.created_at" },
+          },
+          count: { $sum: 1 },
+          items: { $push: "$$ROOT" },
+        },
+      },
+      {
+        $sort: {
+          "_id.day": -1,
+        },
+      },
+    ]);
+
+    res.json(toots);
+  } catch (err) {
+    console.error("Error retrieving toots:", err);
+  }
+}
+
 //get recents by day
 async function getRecent(res: Response) {
   try {
@@ -151,6 +190,10 @@ app.get("/api/friends", (req: Request, res: Response) => {
 
 app.get("/api/hashtags", (req: Request, res: Response) => {
   getHashTags(res);
+});
+
+app.get("/api/hashtags/:value", (req: Request, res: Response) => {
+  tootsDailyHashtag(req, res);
 });
 
 app.get("/api/recent", (req: Request, res: Response) => {
