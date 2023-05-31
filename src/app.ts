@@ -94,6 +94,27 @@ async function getRecent(res: Response) {
   }
 }
 
+// get hashtags by count
+async function getHashTags(res: Response) {
+  try {
+    const toots = await Toot.aggregate([
+      { $unwind: "$data.tags" }, // Flatten the mentions array
+      {
+        $group: {
+          _id: "$data.tags.name", // Group by the username in mentions
+          count: { $sum: 1 }, // Count the occurrences
+        },
+      },
+      { $sort: { count: -1 } },
+      { $limit: 100 },
+    ]);
+
+    res.json(toots);
+  } catch (err) {
+    console.error("Error retrieving toots:", err);
+  }
+}
+
 // get friends by count
 async function getFriends(res: Response) {
   try {
@@ -126,6 +147,10 @@ app.get("/api/toots", (req: Request, res: Response) => {
 
 app.get("/api/friends", (req: Request, res: Response) => {
   getFriends(res);
+});
+
+app.get("/api/hashtags", (req: Request, res: Response) => {
+  getHashTags(res);
 });
 
 app.get("/api/recent", (req: Request, res: Response) => {
