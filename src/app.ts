@@ -10,6 +10,7 @@ app.use(
 );
 
 connectDB();
+
 //get latest account information to make a header
 async function retrieveHeader(res: Response) {
   try {
@@ -23,8 +24,37 @@ async function retrieveHeader(res: Response) {
 }
 
 //get toots by day
-async function tootsDaily(res: Response) {
+
+// interface TootsDailyRequest extends Request {
+//   query: {
+//     page?: string;
+//     limit?: string;
+//   };
+// }
+
+async function tootsDaily(req: Request, res: Response) {
+  const page = parseInt(req.params.value ?? "1");
+  const limit = 5; // number of results per page
   try {
+    const skip = (page - 1) * limit;
+    //get number of unique data
+    const uniqueDatesCount = await Toot.aggregate([
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: "%Y-%m-%d", date: "$data.created_at" },
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+    const count = uniqueDatesCount.length > 0 ? uniqueDatesCount[0].count : 0;
+
     const toots = await Toot.aggregate([
       {
         $sort: {
@@ -50,9 +80,19 @@ async function tootsDaily(res: Response) {
           "_id.day": -1, // Sort by day in ascending order
         },
       },
+      {
+        $skip: skip,
+      },
+      {
+        $limit: limit,
+      },
     ]);
-
-    res.json(toots);
+    let hasNext = true;
+    console.log(count, skip, toots.length);
+    if (count <= skip + toots.length) {
+      hasNext = false;
+    }
+    res.json({ toots, hasNext });
   } catch (err) {
     console.error("Error retrieving toots:", err);
   }
@@ -267,8 +307,8 @@ app.get("/api/header", (req: Request, res: Response) => {
   retrieveHeader(res);
 });
 
-app.get("/api/toots", (req: Request, res: Response) => {
-  tootsDaily(res);
+app.get("/api/toots/:value", (req: Request, res: Response) => {
+  tootsDaily(req, res);
 });
 
 app.get("/api/friends", (req: Request, res: Response) => {
