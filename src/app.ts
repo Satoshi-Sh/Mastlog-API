@@ -92,7 +92,8 @@ async function tootsDaily(req: Request, res: Response) {
     if (count <= skip + toots.length) {
       hasNext = false;
     }
-    if (limit < skip) {
+
+    if (limit <= skip) {
       hasBefore = true;
     }
     res.json({ toots, hasNext, hasBefore });
