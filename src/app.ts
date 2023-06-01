@@ -285,6 +285,27 @@ async function getHashTags(res: Response) {
   }
 }
 
+// get available date that I tooted at least once
+async function getAvailableDate(res: Response) {
+  try {
+    const toots = await Toot.aggregate([
+      {
+        $group: {
+          _id: {
+            day: {
+              $dateToString: { format: "%Y-%m-%d", date: "$data.created_at" },
+            },
+          },
+        },
+      },
+    ]);
+
+    res.json(toots);
+  } catch (err) {
+    console.error("Error retrieving toots:", err);
+  }
+}
+
 // get friends by count
 async function getFriends(res: Response) {
   try {
@@ -329,6 +350,10 @@ app.get("/api/hashtags/:value", (req: Request, res: Response) => {
 
 app.get("/api/date/:value", (req: Request, res: Response) => {
   tootsDailyDate(req, res);
+});
+
+app.get("/api/available", (req: Request, res: Response) => {
+  getAvailableDate(res);
 });
 
 app.get("/api/friends/:value", (req: Request, res: Response) => {
