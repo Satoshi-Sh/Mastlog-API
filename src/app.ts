@@ -88,11 +88,14 @@ async function tootsDaily(req: Request, res: Response) {
       },
     ]);
     let hasNext = true;
-    console.log(count, skip, toots.length);
+    let hasBefore = false;
     if (count <= skip + toots.length) {
       hasNext = false;
     }
-    res.json({ toots, hasNext });
+    if (limit < skip) {
+      hasBefore = true;
+    }
+    res.json({ toots, hasNext, hasBefore });
   } catch (err) {
     console.error("Error retrieving toots:", err);
   }
