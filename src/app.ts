@@ -228,6 +228,47 @@ async function tootsDailyFriend(req: Request, res: Response) {
   }
 }
 
+//get toots by day with keyword filter;
+async function tootsDailyKeyword(req: Request, res: Response) {
+  const keyword = req.params.value;
+  try {
+    const toots = await Toot.aggregate([
+      {
+        $match: {
+          $text: { $search: keyword },
+        },
+      },
+      {
+        $sort: {
+          "data.created_at": -1,
+        },
+      },
+
+      {
+        $group: {
+          _id: {
+            day: {
+              $dateToString: { format: "%Y-%m-%d", date: "$data.created_at" },
+            },
+            dayName: { $isoDayOfWeek: "$data.created_at" },
+          },
+          count: { $sum: 1 },
+          items: { $push: "$$ROOT" },
+        },
+      },
+      {
+        $sort: {
+          "_id.day": -1,
+        },
+      },
+    ]);
+
+    res.json(toots);
+  } catch (err) {
+    console.error("Error retrieving toots:", err);
+  }
+}
+
 //get recents by day
 async function getRecent(res: Response) {
   try {
@@ -358,6 +399,10 @@ app.get("/api/available", (req: Request, res: Response) => {
 
 app.get("/api/friends/:value", (req: Request, res: Response) => {
   tootsDailyFriend(req, res);
+});
+
+app.get("/api/keyword/:value", (req: Request, res: Response) => {
+  tootsDailyKeyword(req, res);
 });
 
 app.get("/api/recent", (req: Request, res: Response) => {
