@@ -5,7 +5,7 @@ import Toot from "./js/tootSchema";
 const cors = require("cors");
 app.use(
   cors({
-    origin: "http://localhost:3001",
+    origin: "https://localhost:3001",
   })
 );
 
