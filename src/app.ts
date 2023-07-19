@@ -1,5 +1,16 @@
 import express, { Request, Response } from "express";
 const app = express();
+require("dotenv").config();
+const https = require("https");
+const fs = require("fs");
+
+const privateKey = fs.readFileSync(process.env["PRIVATE_KEY_PATH"], "utf8");
+const certificate = fs.readFileSync(process.env["FULLCHAIN_PATH"], "utf8");
+
+const credentials = { key: privateKey, cert: certificate };
+
+const httpsServer = https.createServer(credentials, app);
+
 import connectDB from "./js/connectDB";
 import Toot from "./js/tootSchema";
 const cors = require("cors");
@@ -409,6 +420,6 @@ app.get("/api/recent", (req: Request, res: Response) => {
   getRecent(res);
 });
 
-app.listen(3000, () => {
+httpsServer.listen(3000, () => {
   console.log("Server is running on port 3000");
 });

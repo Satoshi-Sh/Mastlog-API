@@ -3,7 +3,7 @@ require("dotenv").config();
 
 const options = {
   tls: true,
-  tlsCertificateKeyFile: "/home/satoshi/mongodb.pem",
+  tlsCertificateKeyFile: "/etc/ssl/mongodb.pem",
   tlsAllowInvalidCertificates: true,
 };
 
